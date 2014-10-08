@@ -14,6 +14,8 @@ def accept_client(client_reader, client_writer):
 def handle_client(client_reader, client_writer):
     while True:
         query, addr = yield from client_reader.read()
+        if not query:
+            break
 
         response = dns.message.Message(query.id)
         response.flags = dns.flags.QR | (query.flags & dns.flags.RD)
