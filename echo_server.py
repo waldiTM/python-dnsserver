@@ -1,7 +1,8 @@
 import asyncio
 import dns.flags, dns.message
-import dnsserver.asyncio_server_datagram
-import dnsserver.asyncio_server_stream
+
+from dnsserver.transport.datagram import start_dns_datagram_server
+from dnsserver.transport.stream import start_dns_server
 
 
 @asyncio.coroutine
@@ -25,8 +26,8 @@ def handle_client(client_reader, client_writer):
 
 
 loop = asyncio.get_event_loop()
-f = dnsserver.asyncio_server_datagram.start_datagram_server(handle_client, host=None, port=2991)
+f = start_dns_datagram_server(handle_client, host=None, port=2991)
 loop.run_until_complete(f)
-f = dnsserver.asyncio_server_stream.start_server(accept_client, host=None, port=2991)
+f = start_dns_server(accept_client, host=None, port=2991)
 loop.run_until_complete(f)
 loop.run_forever()
