@@ -7,7 +7,6 @@ class Client:
     def __init__(self, transport, protocol, reader):
         self._transport, self._protocol, self._reader = transport, protocol, reader
 
-    @asyncio.coroutine
     def __call__(self, query):
         id = query.id
         assert id not in self._reader._requests
