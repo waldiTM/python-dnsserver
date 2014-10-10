@@ -2,15 +2,12 @@ import asyncio
 import dns.flags, dns.message, dns.rdatatype
 import sys
 
-from dnsserver.client import Client
-from dnsserver.transport.stream import open_dns_connection
+from dnsserver.client import open_dns_client
 
 
 @asyncio.coroutine
 def client(name, server='localhost'):
-    reader, writer = yield from open_dns_connection(server)
-
-    client = Client(reader, writer)
+    client = yield from open_dns_client(server)
 
     query = dns.message.make_query(name, dns.rdatatype.A, use_edns=0)
     response = yield from client(query)

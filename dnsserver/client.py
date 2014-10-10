@@ -1,37 +1,58 @@
 import asyncio
 
+from .protocol import DnsDatagramProtocol, DnsStreamProtocol
+
 
 class Client:
-    def __init__(self, reader, writer):
-        self._writer = writer
-        self._reader = asyncio.async(self.__reader_task(reader))
-        self._requests = {}
+    def __init__(self, transport, protocol, reader):
+        self._transport, self._protocol, self._reader = transport, protocol, reader
 
     @asyncio.coroutine
     def __call__(self, query):
         id = query.id
-        assert id not in self._requests
+        assert id not in self._reader._requests
 
-        self._writer.write(query)
+        self._protocol.write(self._transport, query)
         f = asyncio.Future()
-        self._requests[id] = f
+        self._reader._requests[id] = f
 
         return f
 
-    @asyncio.coroutine
-    def __reader_task(self, reader):
-        try:
-            while True:
-                response, addr = yield from reader.read()
-                if not response:
-                    break
 
-                f = self._requests.pop(response.id, None)
-                if f:
-                    f.set_result(response)
-                else:
-                    print("Unexpected response:", response)
+class ClientReader:
+    def __init__(self):
+        self._requests = {}
 
-        finally:
-            for f in self._requests.values():
-                f.cancel()
+    def feed(self, response):
+        f = self._requests.pop(response.id, None)
+        if f:
+            f.set_result(response)
+        else:
+            print("Unexpected response:", response)
+
+
+
+
+@asyncio.coroutine
+def open_dns_client(host=None, port=53, *, loop=None, **kwds):
+    if loop is None:
+        loop = asyncio.get_event_loop()
+
+    reader = ClientReader()
+    protocol = DnsStreamProtocol(reader)
+
+    transport, protocol = yield from loop.create_connection(lambda: protocol, host, port, **kwds)
+
+    return Client(transport, protocol, reader)
+
+@asyncio.coroutine
+def open_dns_datagram_client(host=None, port=53, *, loop=None, limit=None, **kwds):
+    if loop is None:
+        loop = asyncio.get_event_loop()
+
+    reader = ClientReader()
+    protocol = DnsDatagramProtocol(reader)
+
+    transport, protocol = yield from loop.create_datagram_endpoint(lambda: protocol, remote_addr=(host, port), **kwds)
+
+    return Client(transport, protocol, reader)
