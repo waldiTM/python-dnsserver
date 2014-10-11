@@ -7,29 +7,30 @@ class Client:
     def __init__(self, transport, protocol, reader):
         self._transport, self._protocol, self._reader = transport, protocol, reader
 
+    @asyncio.coroutine
     def __call__(self, query):
         id = query.id
-        assert id not in self._reader._requests
+        assert id not in self._reader.requests
 
-        self._protocol.write(self._transport, query)
-        f = asyncio.Future()
-        self._reader._requests[id] = f
-
-        return f
+        self._reader.requests[id] = f = asyncio.Future()
+        try:
+            self._protocol.write(self._transport, query)
+            response = yield from f
+        finally:
+            self._reader.requests.pop(id)
+        return response
 
 
 class ClientReader:
     def __init__(self):
-        self._requests = {}
+        self.requests = {}
 
     def feed(self, response):
-        f = self._requests.pop(response.id, None)
+        f = self.requests.get(response.id, None)
         if f:
             f.set_result(response)
         else:
             print("Unexpected response:", response)
-
-
 
 
 @asyncio.coroutine
