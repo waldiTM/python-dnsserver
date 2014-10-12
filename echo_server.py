@@ -1,8 +1,8 @@
 import asyncio
 import dns.flags, dns.message
 
-from dnsserver.transport.datagram import start_dns_datagram_server
-from dnsserver.transport.stream import start_dns_server
+from dnsserver.server.datagram import start_dns_datagram_server
+from dnsserver.server.stream import start_dns_server
 
 
 @asyncio.coroutine

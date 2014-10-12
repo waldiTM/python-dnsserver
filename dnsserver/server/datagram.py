@@ -56,7 +56,6 @@ class DnsDatagramWriter:
         self._transport.sendto(mesg.to_wire(), addr)
 
 
-
 class DnsDatagramProtocol(asyncio.DatagramProtocol):
     def __init__(self, reader):
         self._reader = reader
@@ -82,18 +81,3 @@ def start_dns_datagram_server(client_cb, host=None, port=53, *, loop=None, limit
     writer = DnsDatagramWriter(transport)
 
     return transport, asyncio.async(client_cb(reader, writer))
-
-
-@asyncio.coroutine
-def open_dns_datagram_connection(host=None, port=53, *, loop=None, limit=None, **kwds):
-    if loop is None:
-        loop = asyncio.get_event_loop()
-
-    reader = DnsDatagramReader(limit=limit, loop=loop)
-    protocol = DnsDatagramProtocol(reader)
-
-    transport, protocol = yield from loop.create_datagram_endpoint(lambda: protocol, remote_addr=(host, port), **kwds)
-
-    writer = DnsDatagramWriter(transport)
-
-    return reader, writer

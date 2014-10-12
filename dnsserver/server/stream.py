@@ -40,12 +40,7 @@ def _wrap(reader, writer):
 @asyncio.coroutine
 def start_dns_server(client_connected_cb, host=None, port=None, **kwds):
     @asyncio.coroutine
-    def cb(client_reader, client_writer):
-        return client_connected_cb(*_wrap(client_reader, client_writer))
+    def cb(*args):
+        return client_connected_cb(*_wrap(*args))
 
     return asyncio.start_server(cb, host, port, **kwds)
-
-
-@asyncio.coroutine
-def open_dns_connection(host=None, port=53, **kwds):
-    return _wrap(*(yield from asyncio.open_connection(host, port, **kwds)))
