@@ -9,12 +9,16 @@ from dnsserver.client import open_dns_datagram_client
 def client(name, server='localhost'):
     client = yield from open_dns_datagram_client(server)
 
+    results = set()
     query = dns.message.make_query(name, dns.rdatatype.A, use_edns=0)
-    response = yield from client(query)
-    print(response)
+    f1 = client(query)
     query = dns.message.make_query(name, dns.rdatatype.AAAA, use_edns=0)
-    response = yield from client(query)
-    print(response)
+    f2 = client(query)
+    done, pending = yield from asyncio.wait((f1, f2), timeout=3)
+    for f in done:
+        print(f.result())
+    for f in pending:
+        f.cancel()
 
 
 loop = asyncio.get_event_loop()
